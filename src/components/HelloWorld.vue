@@ -1,27 +1,48 @@
 <template>
   <div class="hello">
-		<div class="upload">
-			<input type="text" name="text" id="text" v-model="text">
+    <h1>{{ canvasname }}</h1>
+		<div class="form">
+			<img :src="imagePath" v-show="imagePath">
+			<p class="label">テキスト</p>
+			<input type="text" name="text" id="text" v-model="uploadedText.msg">
+			<!-- 初期値が100でないとダメ? -->
+			<button @click="drawText(0,100)">テキストを送信する</button><br>
+			<p class="label">テキスト位置調整</p>
+			<input type="range" name="text" v-model="uploadedText.x" @input='dxyText' max="1000" min='-1000'>
+			<input type="range" name="text" v-model="uploadedText.y" @input='dxyText' max="1000" min="-1000">
+			<p class="label">画像反映</p>
 			<input type="file" name="file" id="file" @change="uploadFile">
+			<button @click="drawImage(0,0)">画像を送信する</button><br>
+			<p class="label">画像位置調整</p>
+			<input type="range" name="text" v-model="uploadedImage.x" @input='dx' max="1000" min='-1000'>
+			<input type="range" name="text" v-model="uploadedImage.y" @input='dy' max="1000" min="-1000">
+			<p class="label">未実装</p>
+			<button @click="changeCanvasToImage">画像に設定する</button>
 		</div>
-		<button @click="drawImage(0,0)">画像を送信する</button>
-			<input type="range" name="text" v-model="uploadedImage.x" @input='dx'>
-			<input type="range" name="text" v-model="uploadedImage.y" @input='dy'>
-		<button @click="drawText">テキストを送信する</button>
-		<canvas id="test" width=900 height=1600></canvas>
-		<!--		<img src ="../assets/logo.png">-->
-    <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
+		<div class="canvas-area">
+			<canvas :id="canvasname" class="canvas" width=1000 height=1000></canvas>
+		</div>
   </div>
 </template>
 
 <script>
 export default {
   name: 'HelloWorld',
+	props: {
+		canvasname: {
+			default: '',
+			type: String
+		}
+	},
   data () {
     return {
-      msg: 'Welcome to Your Vue.js App',
-      text: '',
+			canvas: '',
+			uploadedText: {
+				msg: '',
+				x: 0,
+				y: 0,
+			},
+			imagePath: false,
 			uploadedImage : {
 				path: false,
 				x: 0,
@@ -31,22 +52,8 @@ export default {
   },
 	//mountedはすべて読み込まれてから発火。createdは読み込まれる前に発火
 	mounted: function(){
-		const canvas = document.getElementById('test');
-		//描写オブジェクトの呼び出し
-		const ctx = canvas.getContext('2d');
-
-
-		show().then(console.log('hopge'));
-
-		async function getData(){
-			console.log('ho')
-			return 'success';
-		}
-
-		async function show(){
-			const data = await getData();
-		}
-
+		const canvas = document.getElementById(this.canvasname);
+		this.canvas = canvas;
 	},
 	methods :{
 		insertImage: function(ctx, img_path, dx, dy){
@@ -80,31 +87,37 @@ export default {
 			};
 		},
 		drawImage: function(x, y){
-			const canvas = document.getElementById('test');
 			//描写オブジェクトの呼び出し
-			const ctx = canvas.getContext('2d');
+			const ctx = this.canvas.getContext('2d');
 				this.insertImage(ctx, this.uploadedImage.path, x, y);
 		},
-		drawText: function(){
-			const canvas = document.getElementById('test');
+		drawText: function(x, y){
 			//描写オブジェクトの呼び出し
-			const ctx = canvas.getContext('2d');
+			const ctx = this.canvas.getContext('2d');
 			ctx.font = "bold 64px YuGothic";
-			ctx.fillText(this.text, 100,100);
+			ctx.fillText(this.uploadedText.msg, x, y);
 		},
 		dx: function(){
-			const canvas = document.getElementById('test');
 			//描写オブジェクトの呼び出し
-			const ctx = canvas.getContext('2d');
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			const ctx = this.canvas.getContext('2d');
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 			this.drawImage(this.uploadedImage.x, this.uploadedImage.y)
 		},
 		dy: function(){
-			const canvas = document.getElementById('test');
 			//描写オブジェクトの呼び出し
-			const ctx = canvas.getContext('2d');
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			const ctx = this.canvas.getContext('2d');
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 			this.drawImage(this.uploadedImage.x, this.uploadedImage.y)
+		},
+		dxyText: function(){
+			//描写オブジェクトの呼び出し
+			const ctx = this.canvas.getContext('2d');
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			this.drawText(this.uploadedText.x, this.uploadedText.y)
+		},
+		changeCanvasToImage(){
+			  var png = this.canvas.toDataURL();
+			this.imagePath = png
 		},
 	},
 }
@@ -113,11 +126,31 @@ export default {
 <style>
 #test{
 	border: 1px solid black;
-    background-image: url("~@/../static/back.jpg");
 }
-.hello{
+body{
+	/**
+    background-image: this.url("~@/../static/back.jpg");
+		**/
+}
+
+	/**
+		理由は謎だけどcanvasはcssでwidthを指定するとcanvasサイズというより、拡大出苦笑扱いになる
+		**/
+.canvas{
+	border: 1px solid black;
+	width:50%;
+	height:50%;
+}
+
+.form, .canvas-area{
+	display: inline-block;
+	width: 40vw;
+}
+.form{
+	text-align: left;
 }
 </style>
+
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
@@ -134,5 +167,10 @@ li {
 }
 a {
   color: #42b983;
+}
+
+.label{
+	margin:0;
+	font-weight: bold;
 }
 </style>
